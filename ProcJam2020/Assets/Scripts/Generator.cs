@@ -4,56 +4,121 @@ using UnityEngine;
 
 public class Generator : MonoBehaviour
 {
-    [SerializeField] GameObject cube;
+    [SerializeField] GameObject tile;
 
     public int mapWidth, mapHeight;
-    private int[,] perlinMap;
+    public int minRoomSize = 6, maxRoomSize = 16;
     public int seed;
-    public float perlinDivider;
 
-    private void Start()
+    public bool drawDebugLines;
+
+    Sub_Dungeon root;
+
+    private GameObject[,] tiles;
+
+    private void Awake()
     {
-        perlinMap = new int[mapWidth, mapHeight];
+        GenerateDungeon();
+    }
 
-        for(int i = 0; i < mapWidth; i++)
+    private void ClearDungeon()
+    {
+        foreach(Transform child in transform)
         {
-            for(int j = 0; j < mapHeight; j++)
-            {
-                perlinMap[i, j] = (int)(Mathf.PerlinNoise((i + seed) / perlinDivider, (j + seed) / perlinDivider) * 10f);
-                //Debug.Log(perlinMap[i, j]);
-            }
+            DestroyImmediate(child.gameObject);
         }
 
-        //randomly set parts of the map to empty spaces
-        for (int i = 0; i < mapWidth; i++)
+        root = null;
+    }
+
+    public void GenerateDungeon()
+    {
+        ClearDungeon();
+        tiles = new GameObject[mapWidth, mapHeight];
+        root = new Sub_Dungeon(new Rect(0, 0, mapWidth, mapHeight));
+        CreateBSP(root);
+        root.CreateRoom();
+        DrawRooms(root);
+    }
+
+    private void CreateBSP(Sub_Dungeon sd)
+    {
+        if(sd.IsLeaf())
         {
-            for (int j = 0; j < mapHeight; j++)
+            if(sd.rect.width > maxRoomSize || sd.rect.height > maxRoomSize)
             {
-                if(Random.Range(0, 101) < 40)
+                if(sd.Split(minRoomSize, maxRoomSize))
                 {
-                    perlinMap[i, j] = -1;
+                    CreateBSP(sd.left);
+                    CreateBSP(sd.right);
                 }
             }
         }
+    }
 
-        //set the height of each section to the average height around it
-        //for (int i = 0; i < mapWidth; i++)
-        //{
-        //    for (int j = 0; j < mapHeight; j++)
-        //    {
-
-        //    }
-        //}
-
-        for (int i = 0; i < mapWidth; i++)
+    public void DrawRooms(Sub_Dungeon sd)
+    {
+        if(sd == null)
         {
-            for (int j = 0; j < mapHeight; j++)
+            return;
+        }
+
+        if(sd.IsLeaf())
+        {
+            for(int i = (int)sd.roomRect.x; i < sd.roomRect.xMax; i++)
             {
-                if(perlinMap[i,j] != -1)
+                for(int j = (int)sd.roomRect.y; j < sd.roomRect.yMax; j++)
                 {
-                    Instantiate(cube, new Vector3(i, perlinMap[i, j], j), Quaternion.identity);
+                    GameObject newTile = Instantiate(tile, new Vector3(i, 0, j), Quaternion.identity);
+                    newTile.transform.SetParent(transform);
+                    tiles[i, j] = newTile;
                 }
             }
         }
+        else
+        {
+            DrawRooms(sd.left);
+            DrawRooms(sd.right);
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if(drawDebugLines)
+        {
+            DrawDebugBSP(root);
+        }
+    }
+
+    private void DrawDebugBSP(Sub_Dungeon sd)
+    {
+        Gizmos.color = Color.green;
+
+        Gizmos.DrawLine(new Vector3(sd.rect.x, 0, sd.rect.y), new Vector3(sd.rect.xMax, 0, sd.rect.y));
+        Gizmos.DrawLine(new Vector3(sd.rect.xMax, 0, sd.rect.y), new Vector3(sd.rect.xMax, 0, sd.rect.yMax));
+        Gizmos.DrawLine(new Vector3(sd.rect.x, 0, sd.rect.yMax), new Vector3(sd.rect.xMax, 0, sd.rect.yMax));
+        Gizmos.DrawLine(new Vector3(sd.rect.x, 0, sd.rect.y), new Vector3(sd.rect.x, 0, sd.rect.yMax));
+
+        if(sd.left != null)
+        {
+            DrawDebugBSP(sd.left);
+        }
+
+        if(sd.right != null)
+        {
+            DrawDebugBSP(sd.right);
+        }
+
+        DrawDebugRoom(sd);
+    }
+
+    private void DrawDebugRoom(Sub_Dungeon sd)
+    {
+        Gizmos.color = Color.red;
+
+        Gizmos.DrawLine(new Vector3(sd.roomRect.x, 0, sd.roomRect.y), new Vector3(sd.roomRect.xMax, 0, sd.roomRect.y));
+        Gizmos.DrawLine(new Vector3(sd.roomRect.xMax, 0, sd.roomRect.y), new Vector3(sd.roomRect.xMax, 0, sd.roomRect.yMax));
+        Gizmos.DrawLine(new Vector3(sd.roomRect.x, 0, sd.roomRect.yMax), new Vector3(sd.roomRect.xMax, 0, sd.roomRect.yMax));
+        Gizmos.DrawLine(new Vector3(sd.roomRect.x, 0, sd.roomRect.y), new Vector3(sd.roomRect.x, 0, sd.roomRect.yMax));
     }
 }

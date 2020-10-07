@@ -56,8 +56,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\ExampleAssets\Scripts\SimpleCameraController.cs" />
-    <Compile Include="Assets\ExampleAssets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Scripts\Generator.cs" />
+    <Compile Include="Assets\ExampleAssets\TutorialInfo\Scripts\Readme.cs" />
+    <Compile Include="Assets\Scripts\Sub_Dungeon.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
