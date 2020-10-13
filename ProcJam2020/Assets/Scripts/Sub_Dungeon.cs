@@ -76,23 +76,21 @@ public class Sub_Dungeon
 
         if (splitH)
         {
+            //Debug.Log(minRoomSize + "::" + (rect.width - minRoomSize));
             int split = Random.Range(minRoomSize, (int)(rect.width - minRoomSize));
 
             left = new Sub_Dungeon(new Rect(rect.x, rect.y, rect.width, split));
-            right = new Sub_Dungeon(
-              new Rect(rect.x, rect.y + split, rect.width, rect.height - split));
+            right = new Sub_Dungeon(new Rect(rect.x, rect.y + split, rect.width, rect.height - split));
         }
         else
         {
+            //Debug.Log(minRoomSize + "::" + (rect.height - minRoomSize));
             int split = Random.Range(minRoomSize, (int)(rect.height - minRoomSize));
 
             left = new Sub_Dungeon(new Rect(rect.x, rect.y, split, rect.height));
-            right = new Sub_Dungeon(
-              new Rect(rect.x + split, rect.y, rect.width - split, rect.height));
+            right = new Sub_Dungeon(new Rect(rect.x + split, rect.y, rect.width - split, rect.height));
         }
 
         return true;
     }
-
-
 }

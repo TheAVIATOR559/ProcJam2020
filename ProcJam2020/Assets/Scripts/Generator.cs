@@ -7,14 +7,14 @@ public class Generator : MonoBehaviour
     [SerializeField] GameObject tile;
 
     public int mapWidth, mapHeight;
-    public int minRoomSize = 6, maxRoomSize = 16;
-    public int seed;
+    public int minRoomSize = 6, maxRoomSize = 16; //TODO SHIFT THIS FROM ROOM SIZE TO NUMBER OF SPLITS
+    public int desiredRoomCount = 10;
 
     public bool drawDebugLines;
 
     Sub_Dungeon root;
 
-    private GameObject[,] tiles;
+    [SerializeField] private int seed;
 
     private void Awake()
     {
@@ -34,8 +34,18 @@ public class Generator : MonoBehaviour
     public void GenerateDungeon()
     {
         ClearDungeon();
-        tiles = new GameObject[mapWidth, mapHeight];
+
+        /*desiredRoomCount -> number of splits
+         * 
+         * desiredRoomCount MUST be even
+         * round down to nearest even number
+         * 
+         * number of splits = desiredRoomCount - 1
+         * 
+         */
+
         root = new Sub_Dungeon(new Rect(0, 0, mapWidth, mapHeight));
+
         CreateBSP(root);
         root.CreateRoom();
         DrawRooms(root);
@@ -65,13 +75,25 @@ public class Generator : MonoBehaviour
 
         if(sd.IsLeaf())
         {
-            for(int i = (int)sd.roomRect.x; i < sd.roomRect.xMax; i++)
+            float roomHeight = 0;
+
+            for (int i = (int)sd.roomRect.x; i < sd.roomRect.xMax; i++)
+            {
+                for (int j = (int)sd.roomRect.y; j < sd.roomRect.yMax; j++)
+                {
+                    roomHeight += Mathf.PerlinNoise((float)(i + seed) / 10f, (float)(j + seed) / 10f) * 10f;
+                    //Debug.Log(Mathf.PerlinNoise((float)(i + seed) / 10f, (float)(j + seed) / 10f) * 10f);
+                }
+            }
+            roomHeight = (int)(roomHeight / (sd.roomRect.height * sd.roomRect.width)) - 5;
+            //Debug.Log("room height :: " + roomHeight);
+
+            for (int i = (int)sd.roomRect.x; i < sd.roomRect.xMax; i++)
             {
                 for(int j = (int)sd.roomRect.y; j < sd.roomRect.yMax; j++)
                 {
-                    GameObject newTile = Instantiate(tile, new Vector3(i, 0, j), Quaternion.identity);
+                    GameObject newTile = Instantiate(tile, new Vector3(i, roomHeight, j), Quaternion.identity);
                     newTile.transform.SetParent(transform);
-                    tiles[i, j] = newTile;
                 }
             }
         }
